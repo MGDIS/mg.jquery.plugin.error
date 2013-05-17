@@ -1,0 +1,27 @@
+.mg-error{
+	margin : 2px;
+	padding : 5px;
+}
+
+.mg-error-detailButton
+{
+	cursor:pointer;
+	text-decoration: underline;
+	display: block;
+	padding: 5px;
+}
+
+.ui-state-error .ui-icon-alert,
+.ui-state-error .ui-icon 
+{
+	float: left; 
+	margin-right: .3em;
+}
+
+.mg-error-detail{
+	margin-top : 5px;
+}
+
+p.mg-error-message{
+	width : 80%;
+}
