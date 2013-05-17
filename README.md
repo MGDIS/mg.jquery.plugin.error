@@ -9,6 +9,14 @@ Main functionalities are:
 * Configurable div of dialog display to the users
 * Reporting of the errors to a server
 
+The widget in action
+--------------------
+
+* [Visual tests](http://mgdis.github.io/mg.jquery.plugin.error/tests/visual/error/error.html)
+* [Unit tests](http://mgdis.github.io/mg.jquery.plugin.error/tests/unit/error/error.html)
+ 
+If you find a bug while clicking on one of the links above, please submit an issue.
+
 Automatic handlers
 ------------------
 
