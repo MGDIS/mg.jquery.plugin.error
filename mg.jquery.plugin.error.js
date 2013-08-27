@@ -26,9 +26,18 @@
 
 /* 
  * Plugin jquery for the management of Javascript errors in a page.
+ * Uses UMD for compatibility with requirejs (https://github.com/umdjs/umd/blob/master/jqueryPlugin.js)
  */
-(function ($, undefined) {
-	$.mg = $.mg || {};
+(function (factory) {
+    if (typeof define === 'function' && define.amd) {
+        // AMD. Register as an anonymous module.
+        define(['jquery', 'jquery-ui'], factory);
+    } else {
+        // Browser globals
+        factory(jQuery);
+    }
+}(function ($) {
+    $.mg = $.mg || {};
 	$.mg.error = $.mg.error || {};
 	
 	$.mg.error._handleUncaughtOptions = {};
@@ -289,7 +298,9 @@
 				title: that.options.labels.title,
 				modal: true,
 				dialogClass : "mg-error ui-state-error",
-				close : function(event, ui) { $.mg.errorDisplay._openedDialog = false; }
+				close : function(event, ui) {
+					$.mg.errorDisplay._openedDialog = false;
+				}
 			});
 			// a few modifications of style to make it a 'error' dialog
 			dialog.parent().find(".ui-dialog-titlebar")
@@ -375,5 +386,4 @@
 	 * Remember that a dialog is opened. Used to prevent multiple error dialogs.
 	 */
 	$.mg.errorDisplay._openedDialog = false;
-	
-}(jQuery));
+}));

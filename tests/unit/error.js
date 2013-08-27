@@ -23,7 +23,7 @@ function prepareErrorDiv(){
 }
 
 function closeRemoveDialogs(){
-	$("a.ui-dialog-titlebar-close").click();
+	$(".ui-dialog-titlebar-close").click();
 	$("div:ui-dialog").remove();
 }
 
