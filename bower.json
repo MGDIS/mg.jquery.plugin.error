@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "main": "mg.jquery.plugin.error.js",
   "dependencies": {
-    "jquery": "~1.9.1",
-    "jquery-ui": "~1.10.3"
+    "jquery": ">1.9.0",
+    "jquery-ui": ">1.9.0"
   },
   "devDependencies": {
     "qunit": "~1.11.0",
