@@ -1,6 +1,6 @@
 {
   "name": "jquery-error",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "main": "mg.jquery.plugin.error.js",
   "dependencies": {
     "jquery": ">1.9.0",
