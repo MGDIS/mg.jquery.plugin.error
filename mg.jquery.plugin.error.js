@@ -31,7 +31,7 @@
 (function (factory) {
     if (typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
-        define(['jquery', 'jquery-ui'], factory);
+        define(['jquery', 'jquery-ui-widget'], factory);
     } else {
         // Browser globals
         factory(jQuery);
@@ -199,8 +199,18 @@
 			if (this.options.container) {
 				this._displayInBox(content, this.options.container);
 			} else {
-				if (!$.mg.errorDisplay._openedDialog)
-					this._displayInDialog(content);
+				if (!$.mg.errorDisplay._openedDialog) {
+					// On vérifie la présence d'un widget de dialog jquery-ui ou de modal bootstrap
+					if(content.dialog) {
+						this._displayInUIDialog(content);
+					} else if(content.modal) {
+						this._displayInBootstrapModal(content);
+					} else {
+						console.log('Neither a container or a dialog widget found for displaying errors.');
+						console.log(content);
+					}
+				}
+					
 				else
 					return false;
 			}
@@ -244,6 +254,7 @@
 		 * @returns
 		 */
 		_getStandardContent : function() {
+			var that = this;
 			var content = $("<div class='mg-error-content ui-state-error ui-corner-all'>");
 			
 			$("<p class='mg-error-message'>")
@@ -258,6 +269,9 @@
 			// prepare an empty container for the detail, it will be filled later on
 			this.detailContainer = $("<div class='mg-error-detail' style='display:none;'>")
 				.appendTo(content);
+
+			// toggle the detail of the error when clicking on the corresponding button
+			content.find(".mg-error-detailButton").click(function() { that.detailContainer.toggle(); });
 			
 			return content;
 		},
@@ -268,31 +282,20 @@
 		_displayInBox : function(content, box) {
 			var that = this;
 			
-			$("<div class='mg-error ui-widget'/>")
+			$("<div class='mg-error ui-widget alert alert-error'/>")
 				.append(content)
 				.appendTo(box);			
-			
-			// When clicking on detail show a dialog
-			var detailDialog = content.find(".mg-error-detail").dialog({
-				autoOpen : false,
-				title : that.options.labels.detailTitle,
-				modal : true,
-				width: '90%'
-			});
-			content.find(".mg-error-detailButton").click(function() {
-				detailDialog.dialog("open");	
-			});
 		},
 		/**
 		 * Display an error without HTML element for container, use a jquery-ui dialog
 		 * @param content
 		 */
-		_displayInDialog : function(content) {
+		_displayInUIDialog : function(content) {
 			var that = this;
 			
 			// remember that a dialog was opened to prevent opening many dialogs
 			$.mg.errorDisplay._openedDialog = true;
-			
+
 			var dialog = content.dialog({
 				autoOpen : false,
 				title: that.options.labels.title,
@@ -306,9 +309,28 @@
 			dialog.parent().find(".ui-dialog-titlebar")
 				.removeClass("ui-widget-header");
 			dialog.dialog("open");
+		},
+		/**
+		 * Display an error without HTML element for container, use a bootstrap modal
+		 * @param content
+		 */
+		_displayInBootstrapModal : function(content) {
+			var that = this;
 			
-			// toggle the detail of the error when clicking on the corresponding button
-			content.find(".mg-error-detailButton").click(function() { content.find(".mg-error-detail").toggle(); });
+			// remember that a dialog was opened to prevent opening many dialogs
+			$.mg.errorDisplay._openedDialog = true;
+
+			var modalDiv = $('<div class="modal hide fade">' +
+  								'<div class="modal-header">' +
+    								'<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>' +
+    								'<h3>' + that.options.labels.title + '</h3>' +
+  								'</div>' +
+  								'<div class="modal-body">' +
+  								'</div>' +  								
+  							'</div>');
+
+			modalDiv.find('.modal-body').html(content);
+			modalDiv.modal();
 		},
 		/**
 		 * Use the various options of the widget to build as rich as possible contents for detail variables
