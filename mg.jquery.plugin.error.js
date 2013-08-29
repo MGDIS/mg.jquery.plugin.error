@@ -164,7 +164,10 @@
 		 */
 		_create : function() {
 			var managedError = this._getManagedError();
-			if (managedError && managedError !== "ignore") {
+			if (managedError === "ignore" ) {
+				return;
+			}
+			if (managedError) {
 				// managed error, simply display a message and skip detail and error reporting
 				this._displayContent(this._getManagedContent(managedError));
 			}
