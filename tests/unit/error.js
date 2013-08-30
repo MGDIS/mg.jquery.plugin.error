@@ -59,7 +59,7 @@ asyncTest("Automatic handling of Ajax errors", function(){
 	expect(1);
 	var errorDiv = prepareErrorDiv();
 	$.mg.error.setDefaultContainer(errorDiv);
-	$.mg.error.handleAjax();
+	$.mg.error.handleAjax({ignoredStatus : null});
 	
 	// register a second handler of ajaxError, it will pass after the one defined by handleAjax()
 	$(document).ajaxError(function(){

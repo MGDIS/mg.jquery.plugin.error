@@ -99,6 +99,16 @@
 			$.mg.error._handleAjaxOptions = options;
 		$(document).ajaxError($.mg.error._ajaxErrorHandler);
 	};
+
+	/**
+	 * Manage compatibility with browser versions
+	 */
+	$.mg.error.handleSupportedBrowsers = function(options, supportedBrowsers) {
+		$.mg.BrowserDetect.init();
+		if(supportedBrowsers && !$.mg._isBrowserSupported($.mg.BrowserDetect, supportedBrowsers)) {
+			$.mg.errorDisplay($.extend(options, { nonSupportedBrowser : $.mg.BrowserDetect }));
+		}
+	};
 	
 	/**
 	 * Set the default url that will be used by future instances of the mg.errorDisplay widget to report errors to a server
@@ -145,13 +155,15 @@
     			detailTypeError : "Error type : ",
     			detailMessage : "Message : ",
     			detailStack : "Stack : ",
-    			identificationError : "You have been disconnected. Please sign in again."
-           },
+    			identificationError : "You have been disconnected. Please sign in again.",
+    			nonSupportedBrowserError : "Your browser is not supported by this application."
+    		},
            container : null,
            reportUrl : null,
            errorArgs : null,
            error : null,
            xhr : null,
+           nonSupportedBrowser : null,
            errorType : null,
            message : null,
            stack : null,
@@ -183,8 +195,10 @@
 			// For now the message is either explicitly passed in the parameter options.managedError
 			// or deduced from the status code of an ajax error
 			return this.options.managedError
+					|| (this.options.nonSupportedBrowser && this.options.labels.nonSupportedBrowserError)
 					|| (this.options.xhr
 						&& this.options.xhr.status + ""
+						&& this.options.ignoredStatus
 						&& (this.options.ignoredStatus[this.options.xhr.status] ||
 							(this.options.status2label[this.options.xhr.status]
 								&& this.options.labels[this.options.status2label[this.options.xhr.status]])
@@ -411,4 +425,80 @@
 	 * Remember that a dialog is opened. Used to prevent multiple error dialogs.
 	 */
 	$.mg.errorDisplay._openedDialog = false;
+
+	/**
+	 * Tells if the browser is supported.
+	 * 
+	 * @param detectedBrowser The browser detected with _detectBrowser
+	 * @param browsers The list of supported browsers {name : version, [name : version]}
+	 * @return supported True if detectedBrowsers and, if needed, its version match one of the list "browsers"
+	 */
+	$.mg._isBrowserSupported = function(detectedBrowser, browsers){
+		var supported = false;
+		$.each(browsers, function(key, value){
+			if (value == "*") {
+				if (detectedBrowser.browser == key) {
+					supported = true;
+				}
+			} else {
+				if (detectedBrowser.browser == key && detectedBrowser.version >= value ) {
+					supported = true;
+				}
+			}
+		});
+			
+		return supported;
+	}
+
+	//Utility to detect the current browser version : http://www.quirksmode.org/js/detect.html
+	$.mg.BrowserDetect = {
+		init: function () {
+			this.browser = this.searchString(this.dataBrowser) || "unknown browser";
+			this.version = this.searchVersion(navigator.userAgent)
+				|| this.searchVersion(navigator.appVersion)
+				|| "unknown version";
+		},
+		searchString: function (data) {
+			for (var i=0;i<data.length;i++)	{
+				var dataString = data[i].string;
+				var dataProp = data[i].prop;
+				this.versionSearchString = data[i].versionSearch || data[i].identity;
+				if (dataString) {
+					if (dataString.indexOf(data[i].subString) != -1)
+						return data[i].identity;
+				}
+				else if (dataProp)
+					return data[i].identity;
+			}
+		},
+		searchVersion: function (dataString) {
+			var index = dataString.indexOf(this.versionSearchString);
+			if (index == -1) return;
+			return parseFloat(dataString.substring(index+this.versionSearchString.length+1));
+		},
+		dataBrowser: [
+			{
+				string: navigator.userAgent,
+				subString: "Chrome",
+				identity: "Chrome"
+			},
+			{
+				string: navigator.vendor,
+				subString: "Apple",
+				identity: "Safari",
+				versionSearch: "Version"
+			},
+			{
+				string: navigator.userAgent,
+				subString: "Firefox",
+				identity: "Firefox"
+			},
+			{
+				string: navigator.userAgent,
+				subString: "Trident",
+				identity: "Explorer",
+				versionSearch: "Trident"
+			}
+		]
+	};
 }));
