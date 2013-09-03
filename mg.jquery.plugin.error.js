@@ -258,9 +258,9 @@
 		 * Prepare the content to display a simple managed error 
 		 */
 		_getManagedContent : function(managedError) {
-			var content = $("<div class='mg-error-content ui-state-error ui-corner-all'>");
+			var content = $("<div class='mg-error-content ui-state-error ui-corner-all alert alert-error'>");
 			$("<p class='mg-error-message'>")
-				.text(managedError)
+				.html(managedError)
 				.prepend("<div class='ui-icon ui-icon-alert' />")
 				.appendTo(content);
 			
@@ -272,7 +272,7 @@
 		 */
 		_getStandardContent : function() {
 			var that = this;
-			var content = $("<div class='mg-error-content ui-state-error ui-corner-all'>");
+			var content = $("<div class='mg-error-content ui-state-error ui-corner-all alert alert-error'>");
 			
 			$("<p class='mg-error-message'>")
 				.text(this.options.labels.message)
@@ -337,7 +337,7 @@
 			// remember that a dialog was opened to prevent opening many dialogs
 			$.mg.errorDisplay._openedDialog = true;
 
-			var modalDiv = $('<div class="modal hide fade">' +
+			var modalDiv = $('<div class="modal hide fade alert-error">' +
   								'<div class="modal-header">' +
     								'<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>' +
     								'<h3>' + that.options.labels.title + '</h3>' +
