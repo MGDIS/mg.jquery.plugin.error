@@ -86,5 +86,29 @@ as:
 Options overview
 ----------------
 
-TODO
+*  @param {Object} [options.labels] Labels to be used by the error display
+*  @param {HTML element} [options.container] Element to display errors into. If absent the widget will use a dialog. Use $.mg.error.setDefaultContainer(container) to set this option globally
+*  @param {String} [options.reportUrl] URL of the service to which the widget will send reports of the errors. Use $.mg.error.setDefaultUrl to set this options globally
+*  @param {Object} [options.errorArgs] Optional dictionary of arguments as sent by the event window.onerror. Used by the standard handler for uncaught errors.
+*  @param {Error} [options.error] Error instance, can be sent manually to this widget after catching it
+*  @param {XHR} [options.xhr] Request object of an Ajax call, used by the standard of the global jquery event ajaxError or specified manually
+*  @param {String} [options.errorType] For manual error reporting
+*  @param {String} [options.message] For manual error reporting
+*  @param {String} [options.stack] For manual error reporting
+*  @param {String} [options.managedError] If defined the widget will simply show this message and skip the detail and the reporting
+*  @param {Object} [options.status2label] Used to show custom messages for Ajax errors with specified status codes
+*  @param {Object} [options.ignoredStatus] Used to ignore some Ajax errors based on their statuses
 
+Module definition and dependancies
+----------------------------------
+
+This module is declared as the 'jquery-error' Bower component.
+If AMD is present in the environment it will define itself as an AMD module with dependancies to jquery and jquery-ui-widget (an alias for the jquery-ui widget factory).
+
+No formal dependancy is specified, but to display an error in a dialog the module will require either jquery-ui dialog widget of bootstrap modal widget to be loaded.
+
+TODO
+----
+
+*  Cut the dependancy toward jquery-ui widget factory.
+*  Silent mode : report errors but don't display them.
