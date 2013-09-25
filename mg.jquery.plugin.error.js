@@ -26,9 +26,18 @@
 
 /* 
  * Plugin jquery for the management of Javascript errors in a page.
+ * Uses UMD for compatibility with requirejs (https://github.com/umdjs/umd/blob/master/jqueryPlugin.js)
  */
-(function ($, undefined) {
-	$.mg = $.mg || {};
+(function (factory) {
+    if (typeof define === 'function' && define.amd) {
+        // AMD. Register as an anonymous module.
+        define(['jquery', 'jquery-ui-widget'], factory);
+    } else {
+        // Browser globals
+        factory(jQuery);
+    }
+}(function ($) {
+    $.mg = $.mg || {};
 	$.mg.error = $.mg.error || {};
 	
 	$.mg.error._handleUncaughtOptions = {};
@@ -90,6 +99,16 @@
 			$.mg.error._handleAjaxOptions = options;
 		$(document).ajaxError($.mg.error._ajaxErrorHandler);
 	};
+
+	/**
+	 * Manage compatibility with browser versions
+	 */
+	$.mg.error.handleSupportedBrowsers = function(options, supportedBrowsers) {
+		$.mg.BrowserDetect.init();
+		if(supportedBrowsers && !$.mg._isBrowserSupported($.mg.BrowserDetect, supportedBrowsers)) {
+			$.mg.errorDisplay($.extend(options, { nonSupportedBrowser : $.mg.BrowserDetect }));
+		}
+	};
 	
 	/**
 	 * Set the default url that will be used by future instances of the mg.errorDisplay widget to report errors to a server
@@ -136,13 +155,15 @@
     			detailTypeError : "Error type : ",
     			detailMessage : "Message : ",
     			detailStack : "Stack : ",
-    			identificationError : "You have been disconnected. Please sign in again."
-           },
+    			identificationError : "You have been disconnected. Please sign in again.",
+    			nonSupportedBrowserError : "Your browser is not supported by this application."
+    		},
            container : null,
            reportUrl : null,
            errorArgs : null,
            error : null,
            xhr : null,
+           nonSupportedBrowser : null,
            errorType : null,
            message : null,
            stack : null,
@@ -155,7 +176,10 @@
 		 */
 		_create : function() {
 			var managedError = this._getManagedError();
-			if (managedError && managedError !== "ignore") {
+			if (managedError === "ignore" ) {
+				return;
+			}
+			if (managedError) {
 				// managed error, simply display a message and skip detail and error reporting
 				this._displayContent(this._getManagedContent(managedError));
 			}
@@ -171,8 +195,10 @@
 			// For now the message is either explicitly passed in the parameter options.managedError
 			// or deduced from the status code of an ajax error
 			return this.options.managedError
+					|| (this.options.nonSupportedBrowser && this.options.labels.nonSupportedBrowserError)
 					|| (this.options.xhr
 						&& this.options.xhr.status + ""
+						&& this.options.ignoredStatus
 						&& (this.options.ignoredStatus[this.options.xhr.status] ||
 							(this.options.status2label[this.options.xhr.status]
 								&& this.options.labels[this.options.status2label[this.options.xhr.status]])
@@ -190,8 +216,18 @@
 			if (this.options.container) {
 				this._displayInBox(content, this.options.container);
 			} else {
-				if (!$.mg.errorDisplay._openedDialog)
-					this._displayInDialog(content);
+				if (!$.mg.errorDisplay._openedDialog) {
+					// On vérifie la présence d'un widget de dialog jquery-ui ou de modal bootstrap
+					if(content.dialog) {
+						this._displayInUIDialog(content);
+					} else if(content.modal) {
+						this._displayInBootstrapModal(content);
+					} else {
+						console.log('Neither a container or a dialog widget found for displaying errors.');
+						console.log(content);
+					}
+				}
+					
 				else
 					return false;
 			}
@@ -222,9 +258,9 @@
 		 * Prepare the content to display a simple managed error 
 		 */
 		_getManagedContent : function(managedError) {
-			var content = $("<div class='mg-error-content ui-state-error ui-corner-all'>");
+			var content = $("<div class='mg-error-content ui-state-error ui-corner-all alert alert-error'>");
 			$("<p class='mg-error-message'>")
-				.text(managedError)
+				.html(managedError)
 				.prepend("<div class='ui-icon ui-icon-alert' />")
 				.appendTo(content);
 			
@@ -235,7 +271,8 @@
 		 * @returns
 		 */
 		_getStandardContent : function() {
-			var content = $("<div class='mg-error-content ui-state-error ui-corner-all'>");
+			var that = this;
+			var content = $("<div class='mg-error-content ui-state-error ui-corner-all alert alert-error'>");
 			
 			$("<p class='mg-error-message'>")
 				.text(this.options.labels.message)
@@ -249,6 +286,9 @@
 			// prepare an empty container for the detail, it will be filled later on
 			this.detailContainer = $("<div class='mg-error-detail' style='display:none;'>")
 				.appendTo(content);
+
+			// toggle the detail of the error when clicking on the corresponding button
+			content.find(".mg-error-detailButton").click(function() { that.detailContainer.toggle(); });
 			
 			return content;
 		},
@@ -259,45 +299,55 @@
 		_displayInBox : function(content, box) {
 			var that = this;
 			
-			$("<div class='mg-error ui-widget'/>")
+			$("<div class='mg-error ui-widget alert alert-error'/>")
 				.append(content)
 				.appendTo(box);			
-			
-			// When clicking on detail show a dialog
-			var detailDialog = content.find(".mg-error-detail").dialog({
-				autoOpen : false,
-				title : that.options.labels.detailTitle,
-				modal : true,
-				width: '90%'
-			});
-			content.find(".mg-error-detailButton").click(function() {
-				detailDialog.dialog("open");	
-			});
 		},
 		/**
 		 * Display an error without HTML element for container, use a jquery-ui dialog
 		 * @param content
 		 */
-		_displayInDialog : function(content) {
+		_displayInUIDialog : function(content) {
 			var that = this;
 			
 			// remember that a dialog was opened to prevent opening many dialogs
 			$.mg.errorDisplay._openedDialog = true;
-			
+
 			var dialog = content.dialog({
 				autoOpen : false,
 				title: that.options.labels.title,
 				modal: true,
 				dialogClass : "mg-error ui-state-error",
-				close : function(event, ui) { $.mg.errorDisplay._openedDialog = false; }
+				close : function(event, ui) {
+					$.mg.errorDisplay._openedDialog = false;
+				}
 			});
 			// a few modifications of style to make it a 'error' dialog
 			dialog.parent().find(".ui-dialog-titlebar")
 				.removeClass("ui-widget-header");
 			dialog.dialog("open");
+		},
+		/**
+		 * Display an error without HTML element for container, use a bootstrap modal
+		 * @param content
+		 */
+		_displayInBootstrapModal : function(content) {
+			var that = this;
 			
-			// toggle the detail of the error when clicking on the corresponding button
-			content.find(".mg-error-detailButton").click(function() { content.find(".mg-error-detail").toggle(); });
+			// remember that a dialog was opened to prevent opening many dialogs
+			$.mg.errorDisplay._openedDialog = true;
+
+			var modalDiv = $('<div class="modal hide fade alert-error">' +
+  								'<div class="modal-header">' +
+    								'<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>' +
+    								'<h3>' + that.options.labels.title + '</h3>' +
+  								'</div>' +
+  								'<div class="modal-body">' +
+  								'</div>' +  								
+  							'</div>');
+
+			modalDiv.find('.modal-body').html(content);
+			modalDiv.modal();
 		},
 		/**
 		 * Use the various options of the widget to build as rich as possible contents for detail variables
@@ -375,5 +425,80 @@
 	 * Remember that a dialog is opened. Used to prevent multiple error dialogs.
 	 */
 	$.mg.errorDisplay._openedDialog = false;
-	
-}(jQuery));
+
+	/**
+	 * Tells if the browser is supported.
+	 * 
+	 * @param detectedBrowser The browser detected with _detectBrowser
+	 * @param browsers The list of supported browsers {name : version, [name : version]}
+	 * @return supported True if detectedBrowsers and, if needed, its version match one of the list "browsers"
+	 */
+	$.mg._isBrowserSupported = function(detectedBrowser, browsers){
+		var supported = false;
+		$.each(browsers, function(key, value){
+			if (value == "*") {
+				if (detectedBrowser.browser == key) {
+					supported = true;
+				}
+			} else {
+				if (detectedBrowser.browser == key && detectedBrowser.version >= value ) {
+					supported = true;
+				}
+			}
+		});
+			
+		return supported;
+	}
+
+	//Utility to detect the current browser version : http://www.quirksmode.org/js/detect.html
+	$.mg.BrowserDetect = {
+		init: function () {
+			this.browser = this.searchString(this.dataBrowser) || "unknown browser";
+			this.version = this.searchVersion(navigator.userAgent)
+				|| this.searchVersion(navigator.appVersion)
+				|| "unknown version";
+		},
+		searchString: function (data) {
+			for (var i=0;i<data.length;i++)	{
+				var dataString = data[i].string;
+				var dataProp = data[i].prop;
+				this.versionSearchString = data[i].versionSearch || data[i].identity;
+				if (dataString) {
+					if (dataString.indexOf(data[i].subString) != -1)
+						return data[i].identity;
+				}
+				else if (dataProp)
+					return data[i].identity;
+			}
+		},
+		searchVersion: function (dataString) {
+			var index = dataString.indexOf(this.versionSearchString);
+			if (index == -1) return;
+			return parseFloat(dataString.substring(index+this.versionSearchString.length+1));
+		},
+		dataBrowser: [
+			{
+				string: navigator.userAgent,
+				subString: "Chrome",
+				identity: "Chrome"
+			},
+			{
+				string: navigator.vendor,
+				subString: "Apple",
+				identity: "Safari",
+				versionSearch: "Version"
+			},
+			{
+				string: navigator.userAgent,
+				subString: "Firefox",
+				identity: "Firefox"
+			},
+			{
+				string: navigator.userAgent,
+				subString: "Trident",
+				identity: "Explorer",
+				versionSearch: "Trident"
+			}
+		]
+	};
+}));

@@ -25,18 +25,12 @@
 	<head>
 		<meta charset="utf-8">
 		<title>Plugin mg.error - Visual tests</title>
-		<link rel="stylesheet" href="../theme/jquery.ui.theme.css">
-		<script src="../../testhelpers.js"></script>
-		<script>
-			loadResources({
-				css : ["mg/jquery/mg.jquery.plugin.error.css"],
-				js : [
-					"ext/jquery/ext.jquery.js",
-					"ext/jquery/ext.jquery.plugin.ui.js",
-					"mg/jquery/mg.jquery.plugin.error.js"
-				]
-			});
-		</script>
+		<link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/humanity/jquery-ui.min.css">
+		<link rel="stylesheet" href="../../mg.jquery.plugin.error.css">
+		<script src="../../components/jquery/jquery.js"></script>
+		<script src="../../components/jquery-ui/ui/jquery-ui.js"></script>
+		<script src="../../mg.jquery.plugin.error.js"></script>
+
 		<script>
 			$(document).ready(function() {
 				$("#buttonErrorDialog").button().click(function(){

@@ -1,0 +1,13 @@
+{
+  "name": "jquery-error",
+  "version": "0.2.0",
+  "main": "mg.jquery.plugin.error.js",
+  "dependencies": {
+    "jquery": ">1.9.0",
+    "jquery-ui": ">1.9.0"
+  },
+  "devDependencies": {
+    "qunit": "~1.11.0",
+    "jquery-mockjax": "~1.5.2"
+  }
+}
